@@ -38,7 +38,7 @@
 			MOVE mouse &amp; press LEFT/A: rotate, MIDDLE/S: zoom, RIGHT/D: pan
 		</div>
 
-		<script src="../build/three.min.js"></script>
+		<script src="js/three.min.js"></script>
 
 		<script src="js/controls/TrackballControls.js"></script>
 
@@ -46,7 +46,6 @@
 		<script src="js/libs/stats.min.js"></script>
 
 		<script>
-
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
 			var container, stats;
@@ -111,7 +110,83 @@
 					scene.add( mesh );
 
 
+
+
+ var fontSize = 16;
+  var lettersPerSide = 16;
+  var c = document.createElement('canvas');
+  c.width = c.height = fontSize*lettersPerSide;
+  var ctx = c.getContext('2d');
+  ctx.font = fontSize+'px Monospace';
+  var i=0;
+
+  for (var y=0; y<lettersPerSide; y++) {
+    for (var x=0; x<lettersPerSide; x++,i++) {
+      var ch = String.fromCharCode(i);
+      ctx.fillText(ch, x*fontSize, -(8/32)*fontSize+(y+1)*fontSize);
+    }
+  }
+
+  var tex = new THREE.Texture(c);
+  tex.needsUpdate = true;
+
+  var mat = new THREE.MeshBasicMaterial({map: tex});
+  mat.transparent = true;
+
+  var geo = new THREE.Geometry();
+  var str = "hello";
+
+  var j=0, ln=0;
+
+  for (i=0; i<str.length; i++) {
+    var code = str.charCodeAt(i);
+    var cx = code % lettersPerSide;
+    var cy = Math.floor(code / lettersPerSide);
+    var v,t;
+    geo.vertices.push(
+      new THREE.Vector3( j*1.1+0.05, ln*1.1+0.05, 0 ),
+      new THREE.Vector3( j*1.1+1.05, ln*1.1+0.05, 0 ),
+      new THREE.Vector3( j*1.1+1.05, ln*1.1+1.05, 0 ),
+      new THREE.Vector3( j*1.1+0.05, ln*1.1+1.05, 0 )
+    );
+    var face = new THREE.Face4(i*4+0, i*4+1, i*4+2, i*4+3);
+    geo.faces.push(face);
+    var ox=cx/lettersPerSide, oy=cy/lettersPerSide, off=1/lettersPerSide;
+    var sz = lettersPerSide*fontSize;
+    geo.faceVertexUvs[0].push([
+      new THREE.Vector2( ox, oy+off ),
+      new THREE.Vector2( ox+off, oy+off ),
+      new THREE.Vector2( ox+off, oy ),
+      new THREE.Vector2( ox, oy )
+    ]);
+    if (code == 10) {
+      ln--;
+      j=0;
+    } else {
+      j++;
+    }
+  }
 					
+					
+  var geo1 = new THREE.Geometry();					
+  geo1.vertices.push(
+    new THREE.Vertex(new THREE.Vector3( 0, 0, 0 )),
+    new THREE.Vertex(new THREE.Vector3( 0, 10, 0 )),
+    new THREE.Vertex(new THREE.Vector3( 10, 10, 0 )),
+    new THREE.Vertex(new THREE.Vector3( 10, 0, 0 ))
+  );
+  geo1.faces.push(new THREE.Face3(0, 1, 2),new THREE.Face3(0,3, 2));
+
+  var ox = 0, oy =0, off = 0.5;
+  
+  geo1.faceVertexUvs[0].push([
+      new THREE.UV( ox, oy+off ),
+      new THREE.UV( ox+off, oy+off ),
+      new THREE.UV( ox+off, oy ),
+      new THREE.UV( ox, oy )
+    ]);
+
+
 				texture = THREE.ImageUtils.loadTexture( 'textures/spaceship.png' );
 //				texture.anisotropy = renderer.getMaxAnisotropy();
 
@@ -125,12 +200,15 @@
 					context1.fillStyle = "rgba(255,0,0,0.95)";
 					context1.fillText("ship", 0, 50);				
 					// canvas contents will be used for a texture
-					var texture1 = new THREE.Texture(canvas1) 
-					texture1.needsUpdate = true;					  
-					var material1 = new THREE.MeshBasicMaterial( {map: texture1} );
-					material1.transparent = true;
 				
 				for (var i=0; i<1000; i++) {
+					canvas1.width = canvas1.width;
+					context1.fillText("ship"+i, 0, 50);				
+					var texture1 = new THREE.Texture(canvas1) 
+					texture1.needsUpdate = true;					  
+					var material1 = new THREE.MeshBasicMaterial( {map: tex} );
+					material1.transparent = true;
+
 					objs[i] = new Object();
 					mesh = new THREE.Mesh( geometry, material );
 					objs[i].mesh = mesh;
@@ -144,10 +222,11 @@
 					mesh.rotation.z = Math.atan2(objs[i].vy, objs[i].vx) + Math.PI / 2;
 					objs[i].id = i;
 					scene.add( mesh );
-					objs[i].text = new THREE.Mesh(	geometry,material1  );
+//					objs[i].text = new THREE.Mesh(	geometry,material1  );
+					objs[i].text = new THREE.Mesh(	geo1,new THREE.MeshNormalMaterial()  );
 					objs[i].text.position.x = objs[i].mesh.position.x;
 					objs[i].text.position.y = objs[i].mesh.position.y;
-					objs[i].text.position.z = objs[i].mesh.position.z;
+					objs[i].text.position.z = objs[i].mesh.position.z+0.01;
 					scene.add( objs[i].text );				
 					
 					
