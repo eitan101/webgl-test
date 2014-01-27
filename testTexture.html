@@ -170,20 +170,20 @@
 					
   var geo1 = new THREE.Geometry();					
   geo1.vertices.push(
-    new THREE.Vertex(new THREE.Vector3( 0, 0, 0 )),
-    new THREE.Vertex(new THREE.Vector3( 0, 10, 0 )),
-    new THREE.Vertex(new THREE.Vector3( 10, 10, 0 )),
-    new THREE.Vertex(new THREE.Vector3( 10, 0, 0 ))
+    new THREE.Vector3( 0, 0, 0 ),
+    new THREE.Vector3( 0, 10, 0 ),
+    new THREE.Vector3( 10, 10, 0 ),
+    new THREE.Vector3( 10, 0, 0 )
   );
   geo1.faces.push(new THREE.Face3(0, 1, 2),new THREE.Face3(0,3, 2));
 
   var ox = 0, oy =0, off = 0.5;
   
   geo1.faceVertexUvs[0].push([
-      new THREE.UV( ox, oy+off ),
-      new THREE.UV( ox+off, oy+off ),
-      new THREE.UV( ox+off, oy ),
-      new THREE.UV( ox, oy )
+      new THREE.Vector2( ox, oy+off ),
+      new THREE.Vector2( ox+off, oy+off ),
+      new THREE.Vector2( ox+off, oy ),
+      new THREE.Vector2( ox, oy )
     ]);
 
 
