@@ -36,6 +36,7 @@
             var lastTime;
             var camera, controls, scene, renderer;
             var cross;
+            var shipsGeo;
 
             init();
             animate();
@@ -64,28 +65,49 @@
                 var lettersPerSide = 16;
                 var charMaterial = createCharMaterial(lettersPerSide, fontSize);
                 var shipGeom = new THREE.PlaneGeometry(1, 1);
-                var shipMat = new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('textures/spaceship.png'), transparent:true});
+                var shipMat = new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('textures/spaceship.png'), transparent: true});
+                shipsGeo = new THREE.Geometry();
+                shipsGeo.dynamic = true;
 
-                for (var i = 0; i < 1000; i++) {
+                var num = 10000;
+                for (var i = 0; i < num; i++) {
                     objs[i] = new Object();
                     mesh = new THREE.Mesh(shipGeom, shipMat);
                     objs[i].mesh = mesh;
-                    objs[i].ax = 0;
-                    objs[i].ay = 0;
                     objs[i].vx = (Math.random() - 0.5) * 1;
                     objs[i].vy = (Math.random() - 0.5) * 1;
                     mesh.position.x = (Math.random() - 0.5) * width;
                     mesh.position.y = (Math.random() - 0.5) * height;
-                    mesh.position.z = (Math.random()) * 5;
+                    mesh.position.z = i * 5.0 / num;//(Math.random()) * 5;
                     mesh.rotation.z = Math.atan2(objs[i].vy, objs[i].vx) + Math.PI / 2;
+                    var x = mesh.position.x, y = mesh.position.y, z = mesh.position.z, a = mesh.rotation.z;
                     objs[i].id = i;
-                    scene.add(mesh);
+                    shipsGeo.vertices.push(
+                            new THREE.Vector3(x, y, z),
+                            new THREE.Vector3(x + 1 * Math.cos(a), y + 1 * Math.sin(a), z),
+                            new THREE.Vector3(x + 1 * Math.cos(a) - 1 * Math.sin(a), y + 1 * Math.sin(a) + 1 * Math.cos(a), z),
+                            new THREE.Vector3(x - 1 * Math.sin(a), y + 1 * Math.cos(a), z));
+                    shipsGeo.faces.push(
+                            new THREE.Face3(i * 4 + 0, i * 4 + 1, i * 4 + 2),
+                            new THREE.Face3(i * 4 + 0, i * 4 + 2, i * 4 + 3));
+                    shipsGeo.faceVertexUvs[0].push([
+                        new THREE.Vector2(0, 0),
+                        new THREE.Vector2(1, 0),
+                        new THREE.Vector2(1, 1),
+                    ], [
+                        new THREE.Vector2(0, 0),
+                        new THREE.Vector2(1, 1),
+                        new THREE.Vector2(0, 1),
+                    ]);
+
+
                     objs[i].text = new THREE.Mesh(textGeom("TRACK\n" + i, lettersPerSide, fontSize), charMaterial);
                     objs[i].text.position.x = objs[i].mesh.position.x;
                     objs[i].text.position.y = objs[i].mesh.position.y;
                     objs[i].text.position.z = objs[i].mesh.position.z + 0.01;
-                    scene.add(objs[i].text);
+                    //                scene.add(objs[i].text);
                 }
+                scene.add(new THREE.Mesh(shipsGeo, shipMat));
                 lastTime = new Date().getTime();
                 renderer = new THREE.WebGLRenderer({antialias: false});
                 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -112,38 +134,39 @@
                 controls.update();
                 var ct = new Date().getTime();
                 var dt = (ct - lastTime) / 1000.0;
-                var dt2 = dt * dt / 2.0;
                 lastTime = ct;
                 for (i = 0; i < objs.length; i++) {
-                    objs[i].mesh.position.x += objs[i].vx * dt + objs[i].ax * dt2;
-                    objs[i].mesh.position.y += objs[i].vy * dt + objs[i].ay * dt2;
-                    objs[i].vx +=  objs[i].ax * dt;
-                    objs[i].vy +=  objs[i].ay * dt;
+                    objs[i].mesh.position.x += objs[i].vx * dt;// + objs[i].ax * dt2;
+                    objs[i].mesh.position.y += objs[i].vy * dt;// + objs[i].ay * dt2;
                     if (objs[i].mesh.position.x > width / 2) {
                         objs[i].mesh.position.x = width / 2;
                         objs[i].vx = -objs[i].vx;
-                        objs[i].ax = -objs[i].ax;
                     } else if (objs[i].mesh.position.x < -width / 2) {
                         objs[i].mesh.position.x = -width / 2;
                         objs[i].vx = -objs[i].vx;
-                        objs[i].ax = -objs[i].ax;
-//                        objs[i].mesh.rotation.z = Math.atan2(objs[i].vy, objs[i].vx) + Math.PI / 2;
                     }
                     if (objs[i].mesh.position.y > height / 2) {
                         objs[i].mesh.position.y = height / 2;
-                        objs[i].ay = -objs[i].ay;
                         objs[i].vy = -objs[i].vy;
-//                        objs[i].mesh.rotation.z = Math.atan2(objs[i].vy, objs[i].vx) + Math.PI / 2;
                     } else if (objs[i].mesh.position.y < -height / 2) {
                         objs[i].mesh.position.y = -height / 2;
-                        objs[i].ay = -objs[i].ay;
                         objs[i].vy = -objs[i].vy;
-//                        objs[i].mesh.rotation.z = Math.atan2(objs[i].vy, objs[i].vx) + Math.PI / 2;
                     }
                     objs[i].mesh.rotation.z = Math.atan2(objs[i].vy, objs[i].vx) + Math.PI / 2;
                     objs[i].text.position.x = objs[i].mesh.position.x;
                     objs[i].text.position.y = objs[i].mesh.position.y;
+                    var x = objs[i].mesh.position.x, y = objs[i].mesh.position.y, z = objs[i].mesh.position.z, a = objs[i].mesh.rotation.z;
+
+                    shipsGeo.vertices[i * 4 + 0].x = x;
+                    shipsGeo.vertices[i * 4 + 0].y = y;
+                    shipsGeo.vertices[i * 4 + 1].x = x + 1 * Math.cos(a);
+                    shipsGeo.vertices[i * 4 + 1].y = y + 1 * Math.sin(a);
+                    shipsGeo.vertices[i * 4 + 2].x = x + 1 * Math.cos(a) - 1 * Math.sin(a);
+                    shipsGeo.vertices[i * 4 + 2].y = y + 1 * Math.sin(a) + 1 * Math.cos(a);
+                    shipsGeo.vertices[i * 4 + 3].x = x - 1 * Math.sin(a);
+                    shipsGeo.vertices[i * 4 + 3].y = y + 1 * Math.cos(a);
                 }
+                shipsGeo.verticesNeedUpdate = true;
                 render();
             }
 
@@ -153,4 +176,4 @@
             }
         </script>
     </body>
-</html>
+</html>		
