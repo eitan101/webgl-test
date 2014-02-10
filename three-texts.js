@@ -20,9 +20,9 @@
                 return mat;
             }
 
-            function textGeom(str, lettersPerSide, fontSize) {
-                var geo = new THREE.Geometry();
+            function textGeom(str, lettersPerSide, fontSize, geo, pos) {
                 var j = 0, ln = 0;
+                var base = geo.vertices.length;
 
                 for (i = 0; i < str.length; i++) {
                     var code = str.charCodeAt(i);
@@ -32,13 +32,14 @@
                     var dx = 0.9;
                     var dy = 1.0;
                     geo.vertices.push(
-                            new THREE.Vector3(p * (j * dx + 0.05), p * (ln * dy + 0.05), 0),
-                            new THREE.Vector3(p * ((j + 1) * dx + 0.05), p * (ln * dy + 0.05), 0),
-                            new THREE.Vector3(p * ((j + 1) * dx + 0.05), p * ((ln + 1) * dy + 0.05), 0),
-                            new THREE.Vector3(p * (j * dx + 0.05), p * ((ln + 1) * dy + 0.05), 0));
+                            new THREE.Vector3(p * (j * dx + 0.05), p * (ln * dy + 0.05), 0).add(pos),
+                            new THREE.Vector3(p * ((j + 1) * dx + 0.05), p * (ln * dy + 0.05), 0).add(pos),
+                            new THREE.Vector3(p * ((j + 1) * dx + 0.05), p * ((ln + 1) * dy + 0.05), 0).add(pos),
+                            new THREE.Vector3(p * (j * dx + 0.05), p * ((ln + 1) * dy + 0.05), 0).add(pos));
+                    var ind = base + i*4;
                     geo.faces.push(
-                            new THREE.Face3(i * 4 + 0, i * 4 + 1, i * 4 + 2),
-                            new THREE.Face3(i * 4 + 0, i * 4 + 2, i * 4 + 3));
+                            new THREE.Face3(ind + 0, ind + 1, ind + 2),
+                            new THREE.Face3(ind + 0, ind + 2, ind + 3));
 
                     var ox = cx / lettersPerSide, oy = cy / lettersPerSide, off = 1 / lettersPerSide;
                     geo.faceVertexUvs[0].push([

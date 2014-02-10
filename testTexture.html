@@ -135,39 +135,36 @@
                 var fontSize = 16;
                 var lettersPerSide = 16;
                 var charMaterial = createCharMaterial(lettersPerSide, fontSize);
+                var textGeo = new THREE.Geometry();
+                textGeo.dynamic = true;
                 var shipGeom = new THREE.PlaneGeometry(1, 1);
                 var shipMat = new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('textures/spaceship.png'), transparent: true});
                 shipsGeo = new THREE.Geometry();
                 shipsGeo.dynamic = true;
 
-                // var bufgeo = new THREE.BufferGeometry();
-                // bufgeo.addAttribute( 'position', Float32Array, num, 3 );
-                // bufgeo.addAttribute( 'velocity', Float32Array, num, 2 );
-
 
                 var maxheight = 20.0;
                 var size = 5;
+                var size2 = 2.5;
                 for (var i = 0; i < num; i++) {
-
                     objs[i] = new Object();
                     objs[i].vx = (Math.random() - 0.5) * size;
                     objs[i].vy = (Math.random() - 0.5) * size;
                     var cart = projection([(Math.random() - 0.5) * 360, -(Math.random() - 0.5) * 180]);
-                    objs[i].x = cart[0];
-                    objs[i].y = cart[1];
-//                    objs[i].x = (Math.random() - 0.5) * width;
-//                    objs[i].y = (Math.random() - 0.5) * height;
-                    objs[i].z = i * maxheight / num;//(Math.random()) * 5;
+                    objs[i].pos = new THREE.Vector3(cart[0],cart[1],i * maxheight / num);
                     objs[i].a = Math.atan2(objs[i].vy, objs[i].vx) + Math.PI / 2;
                     objs[i].id = i;
+                    var r = new THREE.Matrix4().makeRotationZ(objs[i].a);
+                    var v = objs[i].pos;
+                    var ind = i*4;
                     shipsGeo.vertices.push(
-                            new THREE.Vector3(0, 0, objs[i].z),
-                            new THREE.Vector3(0, 0, objs[i].z),
-                            new THREE.Vector3(0, 0, objs[i].z),
-                            new THREE.Vector3(0, 0, objs[i].z));
+                            new THREE.Vector3(-size2, -size2, 0).applyMatrix4(r).add(v),
+                            new THREE.Vector3(size2, -size2, 0).applyMatrix4(r).add(v),
+                            new THREE.Vector3(size2, size2, 0).applyMatrix4(r).add(v),
+                            new THREE.Vector3(-size2, size2, 0).applyMatrix4(r).add(v));
                     shipsGeo.faces.push(
-                            new THREE.Face3(i * 4 + 0, i * 4 + 1, i * 4 + 2),
-                            new THREE.Face3(i * 4 + 0, i * 4 + 2, i * 4 + 3));
+                            new THREE.Face3(ind + 0, ind + 1, ind + 2),
+                            new THREE.Face3(ind + 0, ind + 2, ind + 3));
                     shipsGeo.faceVertexUvs[0].push([
                         new THREE.Vector2(0, 0),
                         new THREE.Vector2(1, 0),
@@ -177,36 +174,17 @@
                         new THREE.Vector2(1, 1),
                         new THREE.Vector2(0, 1),
                     ]);
-
-                    var x = objs[i].x, y = objs[i].y, z = objs[i].z, a = objs[i].a;
-                    shipsGeo.vertices[i * 4 + 0].x = x;
-                    shipsGeo.vertices[i * 4 + 0].y = y;
-                    shipsGeo.vertices[i * 4 + 1].x = x + size * Math.cos(a);
-                    shipsGeo.vertices[i * 4 + 1].y = y + size * Math.sin(a);
-                    shipsGeo.vertices[i * 4 + 2].x = x + size * Math.cos(a) - size * Math.sin(a);
-                    shipsGeo.vertices[i * 4 + 2].y = y + size * Math.sin(a) + size * Math.cos(a);
-                    shipsGeo.vertices[i * 4 + 3].x = x - size * Math.sin(a);
-                    shipsGeo.vertices[i * 4 + 3].y = y + size * Math.cos(a);
-                    shipsGeo.verticesNeedUpdate = true;
-
-                    attributes.vx.value.push(objs[i].vx);
-                    attributes.vx.value.push(objs[i].vx);
-                    attributes.vx.value.push(objs[i].vx);
-                    attributes.vx.value.push(objs[i].vx);
-
-                    attributes.vy.value.push(objs[i].vy);
-                    attributes.vy.value.push(objs[i].vy);
-                    attributes.vy.value.push(objs[i].vy);
-                    attributes.vy.value.push(objs[i].vy);
-
-//                    objs[i].text = new THREE.Mesh(textGeom("TRACK\n" + i, lettersPerSide, fontSize), charMaterial);
-                    // objs[i].text.position.x = objs[i].mesh.position.x;
-                    // objs[i].text.position.y = objs[i].mesh.position.y;
-                    // objs[i].text.position.z = objs[i].mesh.position.z + 0.01;
-                    //                scene.add(objs[i].text);
+                    
+                    for (var j=0; j<4; j++) {
+                        attributes.vx.value.push(objs[i].vx);
+                        attributes.vy.value.push(objs[i].vy);                        
+                    }
+                    textGeom("TRK" + i, lettersPerSide, fontSize, textGeo, new THREE.Vector3(0,0,0.1/num).add(v));
                 }
+                var textMesh = new THREE.Mesh(textGeo, charMaterial);
                 shipMesh = new THREE.Mesh(shipsGeo, shaderMaterial);
                 scene.add(shipMesh);
+                scene.add(textMesh);
                 lastTime = new Date().getTime();
                 renderer = new THREE.WebGLRenderer({antialias: false});
                 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -269,7 +247,7 @@
                     new TWEEN.Tween(camera.position).to({
                         x: intersects[ 0 ].point.x,
                         y: intersects[ 0 ].point.y,
-                        z: camera.position.z}
+                        z: intersects[ 0 ].point.z + 10.0}
                     , 500).easing(TWEEN.Easing.Cubic.InOut).start();
 
 
@@ -285,8 +263,7 @@
             function update_text() {
                 if (selected >= 0) {
                     text2.innerHTML = "Track selected: " + selected + "<br/>" +
-//					"pos: "+objs[selected].x + ","+objs[selected].y + "<br/>"+
-                            "geo: " + projection.invert([objs[selected].x, -objs[selected].y]);
+                            "geo: " + projection.invert([objs[selected].pos.x, -objs[selected].pos.y]);
                 } else
                     text2.innerHTML = "Track selected: none<br/><br/>";
             }
