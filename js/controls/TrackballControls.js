@@ -310,6 +310,11 @@ THREE.TrackballControls = function ( object, domElement ) {
 		}
 
 		_this.object.position.addVectors( _this.target, _eye );
+                
+                _this.target.x = _this.object.position.x;
+                _this.target.y = _this.object.position.y;
+                
+
 
 		_this.checkDistances();
 
