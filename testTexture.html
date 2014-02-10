@@ -13,34 +13,34 @@
             a { color: red; }
         </style>
     </head>
-	<!-- Shaders -->
-	<script type="x-shader/x-vertex" id="vertexshader">		
-		uniform float amplitude;
-		attribute float vx;
-		attribute float vy;
-		varying vec3 vNormal;
-		varying vec2 vUv;
-		
-		void main() {
-			vNormal = normal;
-			vUv = uv;
-			
-			vec3 newPosition = position+vec3(vx*amplitude,vy*amplitude,0);
-			gl_Position = projectionMatrix *
-						  modelViewMatrix *
-						  vec4(newPosition,1.0);
-		}
-	</script>
-	
-	<script type="x-shader/x-fragment" id="fragmentshader">
-		varying vec3 vNormal;
-		uniform sampler2D texture1;
-		varying vec2 vUv;
-		
-		void main() {
-			gl_FragColor = texture2D( texture1, vUv );
-		}	
-	</script>
+    <!-- Shaders -->
+    <script type="x-shader/x-vertex" id="vertexshader">		
+        uniform float amplitude;
+        attribute float vx;
+        attribute float vy;
+        varying vec3 vNormal;
+        varying vec2 vUv;
+
+        void main() {
+        vNormal = normal;
+        vUv = uv;
+
+        vec3 newPosition = position+vec3(vx*amplitude,vy*amplitude,0);
+        gl_Position = projectionMatrix *
+        modelViewMatrix *
+        vec4(newPosition,1.0);
+        }
+    </script>
+
+    <script type="x-shader/x-fragment" id="fragmentshader">
+        varying vec3 vNormal;
+        uniform sampler2D texture1;
+        varying vec2 vUv;
+
+        void main() {
+        gl_FragColor = texture2D( texture1, vUv );
+        }	
+    </script>
     <body>
         <div id="container"></div>
         <div id="info">
@@ -49,12 +49,12 @@
         </div>
         <script src="js/three.min.js"></script>
         <script src="js/controls/TrackballControls.js"></script>
-		<script src="js/controls/FlyControls.js"></script>
+        <script src="js/controls/FlyControls.js"></script>
         <script src="js/Detector.js"></script>
-		<script src="js/libs/tween.min.js"></script>
+        <script src="js/libs/tween.min.js"></script>
         <script src="js/libs/stats.min.js"></script>
         <script src="three-texts.js"></script>
-		<script src="js/d3.v3.min.js" charset="utf-8"></script>
+        <script src="js/d3.v3.min.js" charset="utf-8"></script>
         <script>
             if (!Detector.webgl)
                 Detector.addGetWebGLMessage();
@@ -67,23 +67,23 @@
             var camera, controls, scene, renderer;
             var cross;
             var shipsGeo;
-			var attributes = {
-				vx: {type: 'f', value: [] },
-				vy: {type: 'f', value: [] },
-			};
-			var shipMesh;
-			var uniforms = {
-				amplitude: {type: 'f', value: 0	},
-				texture1: { type: "t", value: THREE.ImageUtils.loadTexture( 'textures/spaceship.png') }
-			};
-            var num = 10000;		
-			var text2;
-			var selected = -1;
-			var projection = d3.geo.equirectangular()
-    			.scale((width + 1) / 2 / Math.PI)
-				.translate([0,0])
-				.precision(.1);
-				
+            var attributes = {
+                vx: {type: 'f', value: []},
+                vy: {type: 'f', value: []},
+            };
+            var shipMesh;
+            var uniforms = {
+                amplitude: {type: 'f', value: 0},
+                texture1: {type: "t", value: THREE.ImageUtils.loadTexture('textures/spaceship.png')}
+            };
+            var num = 10000;
+            var text2;
+            var selected = -1;
+            var projection = d3.geo.equirectangular()
+                    .scale((width + 1) / 2 / Math.PI)
+                    .translate([0, 0])
+                    .precision(.1);
+
             init();
             animate();
 
@@ -91,19 +91,19 @@
                 camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
 //				camera = new THREE.OrthographicCamera();
 //31.768379, 35.213722
-				var carpos = projection([35.213722,31.768379]);
+                var carpos = projection([35.213722, 31.768379]);
                 // camera.position.x = carpos[0];
                 // camera.position.y = -carpos[1];
-                 camera.position.z = 200.0;
+                camera.position.z = 200.0;
 //			camera.position.set( carpos[0], -carpos[1], width / 20.0 );
 //			camera.lookAt(carpos[0], -carpos[1], 0);
-			// controls = new THREE.FlyControls( camera );
+                // controls = new THREE.FlyControls( camera );
 
-				// controls.movementSpeed = 1000;
-				// controls.domElement = container;
-				// controls.rollSpeed = Math.PI / 24;
-				// controls.autoForward = false;
-				// controls.dragToLook = false
+                // controls.movementSpeed = 1000;
+                // controls.domElement = container;
+                // controls.rollSpeed = Math.PI / 24;
+                // controls.autoForward = false;
+                // controls.dragToLook = false
 
                 controls = new THREE.TrackballControls(camera);
                 controls.rotateSpeed = 1.0;
@@ -123,15 +123,15 @@
                 scene.add(new THREE.Mesh(new THREE.PlaneGeometry(width, height),
                         new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('textures/world.png')})));
 
-				// create the sphere's material
-				var shaderMaterial = new THREE.ShaderMaterial({
-					uniforms:     	uniforms,
-					attributes:     attributes,
-					transparent: true,
-					vertexShader:   document.getElementById( 'vertexshader' ).textContent,
-					fragmentShader: document.getElementById( 'fragmentshader' ).textContent
-				});
-							
+                // create the sphere's material
+                var shaderMaterial = new THREE.ShaderMaterial({
+                    uniforms: uniforms,
+                    attributes: attributes,
+                    transparent: true,
+                    vertexShader: document.getElementById('vertexshader').textContent,
+                    fragmentShader: document.getElementById('fragmentshader').textContent
+                });
+
                 var fontSize = 16;
                 var lettersPerSide = 16;
                 var charMaterial = createCharMaterial(lettersPerSide, fontSize);
@@ -140,19 +140,19 @@
                 shipsGeo = new THREE.Geometry();
                 shipsGeo.dynamic = true;
 
-				// var bufgeo = new THREE.BufferGeometry();
-				// bufgeo.addAttribute( 'position', Float32Array, num, 3 );
-				// bufgeo.addAttribute( 'velocity', Float32Array, num, 2 );
-				
-					
-				var maxheight = 20.0;
-				var size = 5;
+                // var bufgeo = new THREE.BufferGeometry();
+                // bufgeo.addAttribute( 'position', Float32Array, num, 3 );
+                // bufgeo.addAttribute( 'velocity', Float32Array, num, 2 );
+
+
+                var maxheight = 20.0;
+                var size = 5;
                 for (var i = 0; i < num; i++) {
-					
+
                     objs[i] = new Object();
                     objs[i].vx = (Math.random() - 0.5) * size;
                     objs[i].vy = (Math.random() - 0.5) * size;
-					var cart  = projection([(Math.random() - 0.5) * 360,-(Math.random() - 0.5) * 180]);
+                    var cart = projection([(Math.random() - 0.5) * 360, -(Math.random() - 0.5) * 180]);
                     objs[i].x = cart[0];
                     objs[i].y = cart[1];
 //                    objs[i].x = (Math.random() - 0.5) * width;
@@ -177,7 +177,7 @@
                         new THREE.Vector2(1, 1),
                         new THREE.Vector2(0, 1),
                     ]);
-					
+
                     var x = objs[i].x, y = objs[i].y, z = objs[i].z, a = objs[i].a;
                     shipsGeo.vertices[i * 4 + 0].x = x;
                     shipsGeo.vertices[i * 4 + 0].y = y;
@@ -187,25 +187,25 @@
                     shipsGeo.vertices[i * 4 + 2].y = y + size * Math.sin(a) + size * Math.cos(a);
                     shipsGeo.vertices[i * 4 + 3].x = x - size * Math.sin(a);
                     shipsGeo.vertices[i * 4 + 3].y = y + size * Math.cos(a);
-                   shipsGeo.verticesNeedUpdate = true;
-					
-					attributes.vx.value.push(objs[i].vx);
-					attributes.vx.value.push(objs[i].vx);
-					attributes.vx.value.push(objs[i].vx);
-					attributes.vx.value.push(objs[i].vx);
+                    shipsGeo.verticesNeedUpdate = true;
 
-					attributes.vy.value.push(objs[i].vy);
-					attributes.vy.value.push(objs[i].vy);
-					attributes.vy.value.push(objs[i].vy);
-					attributes.vy.value.push(objs[i].vy);
-					
+                    attributes.vx.value.push(objs[i].vx);
+                    attributes.vx.value.push(objs[i].vx);
+                    attributes.vx.value.push(objs[i].vx);
+                    attributes.vx.value.push(objs[i].vx);
+
+                    attributes.vy.value.push(objs[i].vy);
+                    attributes.vy.value.push(objs[i].vy);
+                    attributes.vy.value.push(objs[i].vy);
+                    attributes.vy.value.push(objs[i].vy);
+
 //                    objs[i].text = new THREE.Mesh(textGeom("TRACK\n" + i, lettersPerSide, fontSize), charMaterial);
                     // objs[i].text.position.x = objs[i].mesh.position.x;
                     // objs[i].text.position.y = objs[i].mesh.position.y;
                     // objs[i].text.position.z = objs[i].mesh.position.z + 0.01;
                     //                scene.add(objs[i].text);
                 }
-				shipMesh = new THREE.Mesh(shipsGeo, shaderMaterial);
+                shipMesh = new THREE.Mesh(shipsGeo, shaderMaterial);
                 scene.add(shipMesh);
                 lastTime = new Date().getTime();
                 renderer = new THREE.WebGLRenderer({antialias: false});
@@ -217,22 +217,22 @@
                 stats.domElement.style.bottom = '0px';
                 stats.domElement.style.zIndex = 100;
                 container.appendChild(stats.domElement);
-				container.addEventListener( 'mousedown', onMouseMove, false );
-				
+                container.addEventListener('mousedown', onMouseMove, false);
+
                 window.addEventListener('resize', onWindowResize, false);
-				
-					text2 = document.createElement('div');
-					text2.style.position = 'absolute';
-				//text2.style.zIndex = 1;
-					text2.style.width = 200;
-					text2.style.height = 120;
-					text2.style.backgroundColor = "#696969";
-					text2.style.color = "white";
-					text2.style.opacity = 0.5;
-					text2.innerHTML = "hi there!";
-					text2.style.top = 10 + 'px';
-					text2.style.left = 10 + 'px';
-					document.body.appendChild(text2);
+
+                text2 = document.createElement('div');
+                text2.style.position = 'absolute';
+                //text2.style.zIndex = 1;
+                text2.style.width = 200;
+                text2.style.height = 120;
+                text2.style.backgroundColor = "#696969";
+                text2.style.color = "white";
+                text2.style.opacity = 0.5;
+                text2.innerHTML = "hi there!";
+                text2.style.top = 10 + 'px';
+                text2.style.left = 10 + 'px';
+                document.body.appendChild(text2);
             }
 
             function onWindowResize() {
@@ -243,65 +243,65 @@
                 render();
             }
 
-			function onMouseMove( event ) {
+            function onMouseMove(event) {
 
-			
-					var mouseX = ( event.clientX / window.innerWidth ) * 2 - 1;
-					var mouseY = -( event.clientY / window.innerHeight ) * 2 + 1;
 
-					var vector = new THREE.Vector3( mouseX, mouseY, camera.near );
+                var mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+                var mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
 
-					// Convert the [-1, 1] screen coordinate into a world coordinate on the near plane
-					var projector = new THREE.Projector();
-					projector.unprojectVector( vector, camera );
+                var vector = new THREE.Vector3(mouseX, mouseY, camera.near);
 
-					var raycaster = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
+                // Convert the [-1, 1] screen coordinate into a world coordinate on the near plane
+                var projector = new THREE.Projector();
+                projector.unprojectVector(vector, camera);
 
-					// See if the ray from the camera into the world hits one of our meshes
-					var intersects = raycaster.intersectObject( shipMesh );
-					lastIntersects = intersects;
+                var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
 
-					// Toggle rotation bool for meshes that we clicked
-					if ( intersects.length > 0 ) {
-					//					   text2.innerHTML = "Track selected: "+Math.floor(intersects[ 0 ].faceIndex / 2);
-						selected = Math.floor(intersects[ 0 ].faceIndex / 2);
-						
-						new TWEEN.Tween( camera.position ).to({
-							x:intersects[ 0 ].point.x,
-							y: intersects[ 0 ].point.y,
-							z: camera.position.z }
-						, 500 ).easing( TWEEN.Easing.Cubic.InOut).start();
-						
+                // See if the ray from the camera into the world hits one of our meshes
+                var intersects = raycaster.intersectObject(shipMesh);
+                lastIntersects = intersects;
 
-						update_text();
-						console.log(intersects[ 0 ]);
-					} else {
-						selected = -1;
-						update_text();					
-					   //text2.innerHTML = "Track selected: none";
-					}
-			}
-			
-			function update_text() {
-				if (selected>=0) {
-					text2.innerHTML = "Track selected: "+selected + "<br/>"+
+                // Toggle rotation bool for meshes that we clicked
+                if (intersects.length > 0) {
+                    //					   text2.innerHTML = "Track selected: "+Math.floor(intersects[ 0 ].faceIndex / 2);
+                    selected = Math.floor(intersects[ 0 ].faceIndex / 2);
+
+                    new TWEEN.Tween(camera.position).to({
+                        x: intersects[ 0 ].point.x,
+                        y: intersects[ 0 ].point.y,
+                        z: camera.position.z}
+                    , 500).easing(TWEEN.Easing.Cubic.InOut).start();
+
+
+                    update_text();
+                    console.log(intersects[ 0 ]);
+                } else {
+                    selected = -1;
+                    update_text();
+                    //text2.innerHTML = "Track selected: none";
+                }
+            }
+
+            function update_text() {
+                if (selected >= 0) {
+                    text2.innerHTML = "Track selected: " + selected + "<br/>" +
 //					"pos: "+objs[selected].x + ","+objs[selected].y + "<br/>"+
-					"geo: "+projection.invert([objs[selected].x,-objs[selected].y]);				
-				} else 
-					text2.innerHTML = "Track selected: none<br/><br/>";
-			}
+                            "geo: " + projection.invert([objs[selected].x, -objs[selected].y]);
+                } else
+                    text2.innerHTML = "Track selected: none<br/><br/>";
+            }
             function animate() {
                 requestAnimationFrame(animate);
                 controls.update();
 
                 var ct = new Date().getTime();
-                var dt = (ct - lastTime) / 1000.0;			
-				uniforms.amplitude.value = 1.0 * Math.sin(dt*3.14);				
+                var dt = (ct - lastTime) / 1000.0;
+                uniforms.amplitude.value = 1.0 * Math.sin(dt * 3.14);
                 render();
             }
 
             function render() {
-				TWEEN.update();
+                TWEEN.update();
                 renderer.render(scene, camera);
                 stats.update();
             }
