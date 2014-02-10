@@ -18,14 +18,15 @@
 		uniform float amplitude;
 		attribute float vx;
 		attribute float vy;
-		varying vec3 vNormal;
-		varying vec2 vUv;
+//		varying vec3 vNormal;
+//		varying vec2 vUv;
 		
 		void main() {
-			vNormal = normal;
-			vUv = uv;
+//			vNormal = normal;
+//			vUv = uv;
 			
 			vec3 newPosition = position+vec3(vx*amplitude,vy*amplitude,0);
+                        gl_PointSize = 20.0;
 			gl_Position = projectionMatrix *
 						  modelViewMatrix *
 						  vec4(newPosition,1.0);
@@ -33,12 +34,12 @@
 	</script>
 	
 	<script type="x-shader/x-fragment" id="fragmentshader">
-		varying vec3 vNormal;
+//		varying vec3 vNormal;
 		uniform sampler2D texture1;
-		varying vec2 vUv;
+//		varying vec2 vUv;
 		
 		void main() {
-			gl_FragColor = texture2D( texture1, vUv );
+			gl_FragColor = texture2D( texture1, gl_PointCoord );
 		}	
 	</script>
     <body>
@@ -76,7 +77,7 @@
 				amplitude: {type: 'f', value: 0	},
 				texture1: { type: "t", value: THREE.ImageUtils.loadTexture( 'textures/spaceship.png') }
 			};
-            var num = 10000;		
+            var num = 100000;		
 			var text2;
 			var selected = -1;
 			var projection = d3.geo.equirectangular()
@@ -161,32 +162,40 @@
                     objs[i].a = Math.atan2(objs[i].vy, objs[i].vx) + Math.PI / 2;
                     objs[i].id = i;
                     shipsGeo.vertices.push(
-                            new THREE.Vector3(0, 0, objs[i].z),
-                            new THREE.Vector3(0, 0, objs[i].z),
-                            new THREE.Vector3(0, 0, objs[i].z),
-                            new THREE.Vector3(0, 0, objs[i].z));
-                    shipsGeo.faces.push(
-                            new THREE.Face3(i * 4 + 0, i * 4 + 1, i * 4 + 2),
-                            new THREE.Face3(i * 4 + 0, i * 4 + 2, i * 4 + 3));
-                    shipsGeo.faceVertexUvs[0].push([
-                        new THREE.Vector2(0, 0),
-                        new THREE.Vector2(1, 0),
-                        new THREE.Vector2(1, 1),
-                    ], [
-                        new THREE.Vector2(0, 0),
-                        new THREE.Vector2(1, 1),
-                        new THREE.Vector2(0, 1),
-                    ]);
-					
-                    var x = objs[i].x, y = objs[i].y, z = objs[i].z, a = objs[i].a;
-                    shipsGeo.vertices[i * 4 + 0].x = x;
-                    shipsGeo.vertices[i * 4 + 0].y = y;
-                    shipsGeo.vertices[i * 4 + 1].x = x + size * Math.cos(a);
-                    shipsGeo.vertices[i * 4 + 1].y = y + size * Math.sin(a);
-                    shipsGeo.vertices[i * 4 + 2].x = x + size * Math.cos(a) - size * Math.sin(a);
-                    shipsGeo.vertices[i * 4 + 2].y = y + size * Math.sin(a) + size * Math.cos(a);
-                    shipsGeo.vertices[i * 4 + 3].x = x - size * Math.sin(a);
-                    shipsGeo.vertices[i * 4 + 3].y = y + size * Math.cos(a);
+//                            new THREE.Vector3(0, 0, objs[i].z),
+//                            new THREE.Vector3(0, 0, objs[i].z),
+//                            new THREE.Vector3(0, 0, objs[i].z),
+                            new THREE.Vector3(objs[i].x, objs[i].y, objs[i].z));
+//                    shipsGeo.faces.push(
+//                            new THREE.Vector3(0, 0, objs[i].z),
+//                            new THREE.Vector3(0, 0, objs[i].z),
+//                            new THREE.Vector3(0, 0, objs[i].z));
+//                    shipsGeo.faces.push(
+//                            new THREE.Vector3(0, 0, objs[i].z),
+//                            new THREE.Vector3(0, 0, objs[i].z),
+//                            new THREE.Vector3(0, 0, objs[i].z));
+//                    shipsGeo.faces.push(
+//                            new THREE.Face3(i * 4 + 0, i * 4 + 1, i * 4 + 2),
+//                            new THREE.Face3(i * 4 + 0, i * 4 + 2, i * 4 + 3));
+//                    shipsGeo.faceVertexUvs[0].push([
+//                        new THREE.Vector2(0, 0),
+//                        new THREE.Vector2(1, 0),
+//                        new THREE.Vector2(1, 1),
+//                    ], [
+//                        new THREE.Vector2(0, 0),
+//                        new THREE.Vector2(1, 1),
+//                        new THREE.Vector2(0, 1),
+//                    ]);
+//					
+//                    var x = objs[i].x, y = objs[i].y, z = objs[i].z, a = objs[i].a;
+//                    shipsGeo.vertices[i * 4 + 0].x = x;
+//                    shipsGeo.vertices[i * 4 + 0].y = y;
+//                    shipsGeo.vertices[i * 4 + 1].x = x + size * Math.cos(a);
+//                    shipsGeo.vertices[i * 4 + 1].y = y + size * Math.sin(a);
+//                    shipsGeo.vertices[i * 4 + 2].x = x + size * Math.cos(a) - size * Math.sin(a);
+//                    shipsGeo.vertices[i * 4 + 2].y = y + size * Math.sin(a) + size * Math.cos(a);
+//                    shipsGeo.vertices[i * 4 + 3].x = x - size * Math.sin(a);
+//                    shipsGeo.vertices[i * 4 + 3].y = y + size * Math.cos(a);
                    shipsGeo.verticesNeedUpdate = true;
 					
 					attributes.vx.value.push(objs[i].vx);
@@ -205,7 +214,7 @@
                     // objs[i].text.position.z = objs[i].mesh.position.z + 0.01;
                     //                scene.add(objs[i].text);
                 }
-				shipMesh = new THREE.Mesh(shipsGeo, shaderMaterial);
+				shipMesh = new THREE.ParticleSystem(shipsGeo, shaderMaterial);
                 scene.add(shipMesh);
                 lastTime = new Date().getTime();
                 renderer = new THREE.WebGLRenderer({antialias: false});
