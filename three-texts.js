@@ -21,7 +21,7 @@
 
             }
 
-            function textGeom(str, lettersPerSide, fontSize, geo, pos) {
+            function addTextToGeom(str, lettersPerSide, fontSize, geo, pos) {
                 var j = -str.length/2, ln = 0;
                 var base = geo.vertices.length;
 

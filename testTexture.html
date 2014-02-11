@@ -68,7 +68,6 @@
         <script src="js/three.min.js"></script>
         <script type="text/javascript" src="js/dat.gui.min.js"></script>
         <script src="js/controls/TrackballControls.js"></script>
-        <script src="js/controls/FlyControls.js"></script>
         <script src="js/Detector.js"></script>
         <script src="js/libs/tween.min.js"></script>
         <script src="js/libs/stats.min.js"></script>
@@ -90,11 +89,8 @@ var attributes = {
     img: {type: 'f', value: []},
     vel: {type: 'v2', value: []},
 };
-var tattributes = {
-    vel: {type: 'v2', value: []},
-};
 var ConfigObj = function() {
-    this.movement = 1.0;
+    this.movement = 0.5;
     this.map = 0.4;
 };
 var config = new ConfigObj();
@@ -111,7 +107,7 @@ var uniforms = {
     texture1: {type: "t", value: THREE.ImageUtils.loadTexture('textures/spaceship.png')},
     texture2: {type: "t", value: charTex}
 };
-var num = 10000;
+var num = 5000;
 var text2;
 var selected = -1;
 var projection = d3.geo.equirectangular()
@@ -131,25 +127,20 @@ function init() {
     // world
     scene = new THREE.Scene();
     worldMat = new THREE.MeshBasicMaterial({map: THREE.ImageUtils.loadTexture('textures/world.png'), opacity: 0.4, transparent: true});
-    scene.add(new THREE.Mesh(new THREE.PlaneGeometry(width, height),
-            worldMat));
+    scene.add(new THREE.Mesh(new THREE.PlaneGeometry(width, height), worldMat));
 
     // create the sphere's material
     var shaderMaterial = new THREE.ShaderMaterial({
-        uniforms: uniforms,
-        attributes: attributes,
-        transparent: true,
+        uniforms: uniforms, attributes: attributes, transparent: true,
         vertexShader: document.getElementById('vertexshader').textContent,
         fragmentShader: document.getElementById('fragmentshader').textContent
     });
-    var textGeo = new THREE.Geometry();
-    textGeo.dynamic = true;
     shipsGeo = new THREE.Geometry();
-    shipsGeo.dynamic = true;
+//    shipsGeo.dynamic = true;
 
     var maxheight = 20.0;
-    var size = 5;
-    var size2 = 2.5;
+    var size = 5.0;
+    var size2 = size / 2.0;
     for (var i = 0; i < num; i++) {
         objs[i] = new Object();
         objs[i].vel = new THREE.Vector2((Math.random() - 0.5) * size, (Math.random() - 0.5) * size);
@@ -158,40 +149,36 @@ function init() {
         var ind = shipsGeo.vertices.length;
         objs[i].faceIndex = shipsGeo.faces.length;
         objs[i].imgIndex = attributes.img.value.length;
-        var r = new THREE.Matrix4().makeRotationZ(Math.atan2(objs[i].vel.y, objs[i].vel.x) + Math.PI / 2);
+        var rotate = new THREE.Matrix4().makeRotationZ(Math.atan2(objs[i].vel.y, objs[i].vel.x) + Math.PI / 2);
         shipsGeo.vertices.push(
-                new THREE.Vector3(-size2, -size2, 0).applyMatrix4(r).add(objs[i].pos),
-                new THREE.Vector3(size2, -size2, 0).applyMatrix4(r).add(objs[i].pos),
-                new THREE.Vector3(size2, size2, 0).applyMatrix4(r).add(objs[i].pos),
-                new THREE.Vector3(-size2, size2, 0).applyMatrix4(r).add(objs[i].pos));
+                new THREE.Vector3(-size2, -size2, 0).applyMatrix4(rotate).add(objs[i].pos),
+                new THREE.Vector3(size2, -size2, 0).applyMatrix4(rotate).add(objs[i].pos),
+                new THREE.Vector3(size2, size2, 0).applyMatrix4(rotate).add(objs[i].pos),
+                new THREE.Vector3(-size2, size2, 0).applyMatrix4(rotate).add(objs[i].pos));
         shipsGeo.faces.push(
                 new THREE.Face3(ind + 0, ind + 1, ind + 2),
                 new THREE.Face3(ind + 0, ind + 2, ind + 3));
-        shipsGeo.faceVertexUvs[0].push([
-            new THREE.Vector2(0, 0),
-            new THREE.Vector2(1, 0),
-            new THREE.Vector2(1, 1),
-        ], [
-            new THREE.Vector2(0, 0),
-            new THREE.Vector2(1, 1),
-            new THREE.Vector2(0, 1),
-        ]);
+        shipsGeo.faceVertexUvs[0].push(
+                [new THREE.Vector2(0, 0), new THREE.Vector2(1, 0), new THREE.Vector2(1, 1)],
+                [new THREE.Vector2(0, 0), new THREE.Vector2(1, 1), new THREE.Vector2(0, 1)]);
 
         for (var j = 0; j < 4; j++) {
+            // push velocity and texture type for every spaceship vertex
             attributes.vel.value.push(objs[i].vel);
             attributes.img.value.push(0);
         }
+
+
         var text = "TRK" + i;
-        textGeom(text, lettersPerSide, fontSize, shipsGeo, new THREE.Vector3(0, 0, 0.2 / num).add(objs[i].pos));
+        addTextToGeom(text, lettersPerSide, fontSize, shipsGeo, new THREE.Vector3(0, 0, 0.2 / num).add(objs[i].pos));
+        // push velocity and texture type for every letter vertex
         for (var j = 0; j < 4 * text.length; j++) {
             attributes.vel.value.push(objs[i].vel);
             attributes.img.value.push(1);
         }
     }
-//                var textMesh = new THREE.Mesh(textGeo, shaderMaterial);//textShaderMaterial);//charMaterial);
     shipMesh = new THREE.Mesh(shipsGeo, shaderMaterial);
     scene.add(shipMesh);
-//                scene.add(textMesh);
     lastTime = new Date().getTime();
     renderer = new THREE.WebGLRenderer({antialias: false});
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -269,10 +256,7 @@ function onMouseMove(event) {
         }
         attributes[ "img" ].needsUpdate = true;
     }
-
-    // Toggle rotation bool for meshes that we clicked
     if (intersects.length > 0) {
-        //					   text2.innerHTML = "Track selected: "+Math.floor(intersects[ 0 ].faceIndex / 2);
         var fi = Math.floor(intersects[ 0 ].faceIndex / 2) * 2;
         for (var i = 0; i < objs.length; i++) {
             if (objs[i].faceIndex == fi) {
@@ -280,19 +264,15 @@ function onMouseMove(event) {
                     attributes.img.value[objs[i].imgIndex + j] = 0.1;
                 attributes[ "img" ].needsUpdate = true;
                 selected = i;
-
+                new TWEEN.Tween(camera.position).to({
+                    x: objs[selected].pos.x,
+                    y: objs[selected].pos.y,
+                    z: objs[selected].pos.z + 15.0}
+                , 500).easing(TWEEN.Easing.Cubic.InOut).start();
+                update_text();
                 break;
             }
         }
-        console.log(intersects[ 0 ]);
-        console.log(selected);
-
-        new TWEEN.Tween(camera.position).to({
-            x: objs[selected].pos.x,
-            y: objs[selected].pos.y,
-            z: objs[selected].pos.z + 15.0}
-        , 500).easing(TWEEN.Easing.Cubic.InOut).start();
-        update_text();
     } else {
         selected = -1;
         update_text();
