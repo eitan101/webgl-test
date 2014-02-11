@@ -42,22 +42,25 @@
                 gl_FragColor = texture2D( texture2, vUv );
         }	
     </script>
-    <script type="x-shader/x-vertex" id="tvertexshader">		
-        uniform float amplitude;
-        attribute vec2 vel;
-        varying vec2 vUv;
+    <script type="x-shader/x-vertex" id="pvertexshader">		
+        uniform float time;
+        varying float light;
+        attribute float phi;
+
         void main() {
-//            vec2 vel = vec2(1.0,1.0);
-            vUv = uv;
-            vec3 newPosition = position+vec3(vel,0)*amplitude;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition,1.0);
+            light = mod(time+phi, 1.0);
+            vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+            gl_PointSize = 1.0 * ( 300.0 / length( mvPosition.xyz ) );            
+            gl_Position = projectionMatrix * mvPosition;            
         }
     </script>
-    <script type="x-shader/x-fragment" id="tfragmentshader">
-        uniform sampler2D texture2;
-        varying vec2 vUv;
+    <script type="x-shader/x-fragment" id="pfragmentshader">
+        varying float light;
         void main() {
-            gl_FragColor = texture2D( texture2, vUv );
+            float l = length(2.0*(gl_PointCoord-vec2(0.5,0.5)));
+            if (l>1.0)
+                discard;
+            gl_FragColor = cos(l)*vec4(1.0,0.0,0.0,max(light,0.1));//texture2D( texture3, gl_PointCoord );
         }	
     </script>
     <body>
@@ -89,6 +92,9 @@ var attributes = {
     img: {type: 'f', value: []},
     vel: {type: 'v2', value: []},
 };
+var pattributes = {
+    phi: {type: 'f', value: []},
+};
 var ConfigObj = function() {
     this.movement = 0.5;
     this.map = 0.4;
@@ -106,6 +112,9 @@ var uniforms = {
     amplitude: {type: 'f', value: 0},
     texture1: {type: "t", value: THREE.ImageUtils.loadTexture('textures/spaceship.png')},
     texture2: {type: "t", value: charTex}
+};
+var puniforms = {
+    time: {type: 'f', value: 0},
 };
 var num = 5000;
 var text2;
@@ -130,12 +139,18 @@ function init() {
     scene.add(new THREE.Mesh(new THREE.PlaneGeometry(width, height), worldMat));
 
     // create the sphere's material
-    var shaderMaterial = new THREE.ShaderMaterial({
+    var shipMaterial = new THREE.ShaderMaterial({
         uniforms: uniforms, attributes: attributes, transparent: true,
         vertexShader: document.getElementById('vertexshader').textContent,
         fragmentShader: document.getElementById('fragmentshader').textContent
     });
+    var plotMaterial = new THREE.ShaderMaterial({
+        uniforms: puniforms, attributes: pattributes, transparent: true,
+        vertexShader: document.getElementById('pvertexshader').textContent,
+        fragmentShader: document.getElementById('pfragmentshader').textContent
+    });
     shipsGeo = new THREE.Geometry();
+    var plotsGeo = new THREE.Geometry();
 //    shipsGeo.dynamic = true;
 
     var maxheight = 20.0;
@@ -145,11 +160,16 @@ function init() {
         objs[i] = new Object();
         objs[i].vel = new THREE.Vector2((Math.random() - 0.5) * size, (Math.random() - 0.5) * size);
         var cart = projection([(Math.random() - 0.5) * 360, -(Math.random() - 0.5) * 180]);
-        objs[i].pos = new THREE.Vector3(cart[0], cart[1], 0.05 + i * maxheight / num);
+        objs[i].pos = new THREE.Vector3(cart[0], cart[1], i * maxheight / num);
         var ind = shipsGeo.vertices.length;
         objs[i].faceIndex = shipsGeo.faces.length;
         objs[i].imgIndex = attributes.img.value.length;
         var rotate = new THREE.Matrix4().makeRotationZ(Math.atan2(objs[i].vel.y, objs[i].vel.x) + Math.PI / 2);
+        var vel = objs[i].vel.length();
+        for (var j = 0; j < 20; j++) {
+            plotsGeo.vertices.push(new THREE.Vector3(3*vel*(Math.cos(j/20*1.57)-1), 3*vel*Math.sin(j/20*1.57)+size2, 0.4/num).applyMatrix4(rotate).add(objs[i].pos));
+            pattributes.phi.value.push(j/20);
+        }
         shipsGeo.vertices.push(
                 new THREE.Vector3(-size2, -size2, 0).applyMatrix4(rotate).add(objs[i].pos),
                 new THREE.Vector3(size2, -size2, 0).applyMatrix4(rotate).add(objs[i].pos),
@@ -177,8 +197,10 @@ function init() {
             attributes.img.value.push(1);
         }
     }
-    shipMesh = new THREE.Mesh(shipsGeo, shaderMaterial);
+    shipMesh = new THREE.Mesh(shipsGeo, shipMaterial);
+    scene.add(new THREE.ParticleSystem(plotsGeo, plotMaterial));//new THREE.ParticleSystemMaterial( { size: 1, vertexColors: true } )));
     scene.add(shipMesh);
+    
     lastTime = new Date().getTime();
     renderer = new THREE.WebGLRenderer({antialias: false});
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -293,6 +315,8 @@ function animate() {
     var ct = new Date().getTime();
     var dt = (ct - lastTime) / 1000.0;
     uniforms.amplitude.value = config.movement * Math.sin(dt * 3.14);
+    puniforms.time.value = dt;
+
     worldMat.opacity = config.map;
     render();
 }
