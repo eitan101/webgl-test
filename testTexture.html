@@ -36,8 +36,6 @@
         varying mat2 RotationMatrix;
 
         void main() {
-//            if (length(gl_PointCoord)>1.05)
-//                discard;
             vec2 v = (gl_PointCoord-vec2(0.5,0.5))*RotationMatrix+vec2(0.5,0.5);
             if (v.x<0.0 || v.x>1.0 || v.y<0.0 || v.y>1.0)
                 discard;
