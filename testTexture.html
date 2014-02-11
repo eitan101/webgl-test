@@ -26,10 +26,9 @@
 //			vUv = uv;
 			
 			vec3 newPosition = position+vec3(vx*amplitude,vy*amplitude,0);
-                        gl_PointSize = 20.0;
-			gl_Position = projectionMatrix *
-						  modelViewMatrix *
-						  vec4(newPosition,1.0);
+                        vec4 mvPosition = modelViewMatrix * vec4( newPosition, 1.0 );
+                        gl_PointSize = 4.0 * ( 300.0 / length( mvPosition.xyz ) );
+			gl_Position = projectionMatrix * mvPosition;
 		}
 	</script>
 	
@@ -77,7 +76,7 @@
 				amplitude: {type: 'f', value: 0	},
 				texture1: { type: "t", value: THREE.ImageUtils.loadTexture( 'textures/spaceship.png') }
 			};
-            var num = 100000;		
+            var num = 400000;		
 			var text2;
 			var selected = -1;
 			var projection = d3.geo.equirectangular()
