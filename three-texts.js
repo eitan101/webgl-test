@@ -14,14 +14,12 @@
                 }
                 var tex = new THREE.Texture(c);
                 tex.needsUpdate = true;
+                return tex;
 
-                var mat = new THREE.MeshBasicMaterial({map: tex});
-                mat.transparent = true;
-                return mat;
             }
 
             function textGeom(str, lettersPerSide, fontSize, geo, pos) {
-                var j = 0, ln = 0;
+                var j = -str.length/2, ln = 0;
                 var base = geo.vertices.length;
 
                 for (i = 0; i < str.length; i++) {

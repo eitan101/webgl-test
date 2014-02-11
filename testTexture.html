@@ -17,27 +17,44 @@
     <script type="x-shader/x-vertex" id="vertexshader">		
         uniform float amplitude;
         attribute vec2 vel;
-        varying vec3 vNormal;
+        attribute float img;
         varying vec2 vUv;
-
+        varying float vImg;
         void main() {
-        vNormal = normal;
-        vUv = uv;
-
-        vec3 newPosition = position+vec3(vel,0)*amplitude;
-        gl_Position = projectionMatrix *
-        modelViewMatrix *
-        vec4(newPosition,1.0);
+            vUv = uv;
+            vImg = img;
+            vec3 newPosition = position+vec3(vel,0)*amplitude;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition,1.0);
         }
     </script>
-
     <script type="x-shader/x-fragment" id="fragmentshader">
-        varying vec3 vNormal;
         uniform sampler2D texture1;
+        uniform sampler2D texture2;
         varying vec2 vUv;
-
+        varying float vImg;
         void main() {
-        gl_FragColor = texture2D( texture1, vUv );
+            if (vImg==0.0)
+                gl_FragColor = texture2D( texture1, vUv );
+            else 
+                gl_FragColor = texture2D( texture2, vUv );
+        }	
+    </script>
+    <script type="x-shader/x-vertex" id="tvertexshader">		
+        uniform float amplitude;
+        attribute vec2 vel;
+        varying vec2 vUv;
+        void main() {
+//            vec2 vel = vec2(1.0,1.0);
+            vUv = uv;
+            vec3 newPosition = position+vec3(vel,0)*amplitude;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition,1.0);
+        }
+    </script>
+    <script type="x-shader/x-fragment" id="tfragmentshader">
+        uniform sampler2D texture2;
+        varying vec2 vUv;
+        void main() {
+            gl_FragColor = texture2D( texture2, vUv );
         }	
     </script>
     <body>
@@ -67,12 +84,24 @@
             var cross;
             var shipsGeo;
             var attributes = {
+                img: {type: 'f' , value: []},
+                vel: {type: 'v2', value: []},
+            };
+            var tattributes = {
                 vel: {type: 'v2', value: []},
             };
             var shipMesh;
+            var fontSize = 16;
+            var lettersPerSide = 16;
+            
+            var charTex = createCharMaterial(lettersPerSide, fontSize);
+            var charMaterial = new THREE.MeshBasicMaterial({map: charTex});
+            charMaterial.transparent = true;
+            
             var uniforms = {
                 amplitude: {type: 'f', value: 0},
-                texture1: {type: "t", value: THREE.ImageUtils.loadTexture('textures/spaceship.png')}
+                texture1: {type: "t", value: THREE.ImageUtils.loadTexture('textures/spaceship.png')},
+                texture2: {type: "t", value: charTex }
             };
             var num = 10000;
             var text2;
@@ -94,7 +123,7 @@
                 controls = new THREE.TrackballControls(camera);
                 controls.rotateSpeed = 1.0;
                 controls.zoomSpeed = 1.2;
-                controls.panSpeed = 0.8;
+                controls.panSpeed = 1.8;
                 controls.noZoom = false;
                 controls.noPan = false;
                 controls.noRotate = true;
@@ -117,10 +146,14 @@
                     vertexShader: document.getElementById('vertexshader').textContent,
                     fragmentShader: document.getElementById('fragmentshader').textContent
                 });
+                var textShaderMaterial = new THREE.ShaderMaterial({
+                    uniforms: uniforms,
+                    attributes: tattributes,
+                    transparent: true,
+                    vertexShader: document.getElementById('tvertexshader').textContent,
+                    fragmentShader: document.getElementById('tfragmentshader').textContent
+                });
 
-                var fontSize = 16;
-                var lettersPerSide = 16;
-                var charMaterial = createCharMaterial(lettersPerSide, fontSize);
                 var textGeo = new THREE.Geometry();
                 textGeo.dynamic = true;
                 shipsGeo = new THREE.Geometry();
@@ -133,9 +166,10 @@
                     objs[i] = new Object();
                     objs[i].vel = new THREE.Vector2((Math.random() - 0.5) * size,(Math.random() - 0.5) * size);
                     var cart = projection([(Math.random() - 0.5) * 360, -(Math.random() - 0.5) * 180]);
-                    objs[i].pos = new THREE.Vector3(cart[0],cart[1],i * maxheight / num);
+                    objs[i].pos = new THREE.Vector3(cart[0],cart[1],0.05 + i * maxheight / num);
+                    var ind = shipsGeo.vertices.length;
+                    objs[i].faceIndex = shipsGeo.faces.length;                    
                     var r = new THREE.Matrix4().makeRotationZ(Math.atan2(objs[i].vel.y, objs[i].vel.x) + Math.PI / 2);
-                    var ind = i*4;
                     shipsGeo.vertices.push(
                             new THREE.Vector3(-size2, -size2, 0).applyMatrix4(r).add(objs[i].pos),
                             new THREE.Vector3(size2, -size2, 0).applyMatrix4(r).add(objs[i].pos),
@@ -154,14 +188,21 @@
                         new THREE.Vector2(0, 1),
                     ]);
                     
-                    for (var j=0; j<4; j++) 
+                    for (var j=0; j<4; j++) { 
                         attributes.vel.value.push(objs[i].vel);
-                    textGeom("TRK" + i, lettersPerSide, fontSize, textGeo, new THREE.Vector3(0,0,0.1/num).add(objs[i].pos));
+                        attributes.img.value.push(0);
+                    }
+                    var text = "TRK" + i;
+                    textGeom(text, lettersPerSide, fontSize, shipsGeo, new THREE.Vector3(0,0,0.1/num).add(objs[i].pos));
+                    for (var j=0; j<4*text.length; j++) {
+                        attributes.vel.value.push(objs[i].vel);
+                        attributes.img.value.push(1);
+                    }
                 }
-                var textMesh = new THREE.Mesh(textGeo, charMaterial);
+//                var textMesh = new THREE.Mesh(textGeo, shaderMaterial);//textShaderMaterial);//charMaterial);
                 shipMesh = new THREE.Mesh(shipsGeo, shaderMaterial);
                 scene.add(shipMesh);
-                scene.add(textMesh);
+//                scene.add(textMesh);
                 lastTime = new Date().getTime();
                 renderer = new THREE.WebGLRenderer({antialias: false});
                 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -219,17 +260,22 @@
                 // Toggle rotation bool for meshes that we clicked
                 if (intersects.length > 0) {
                     //					   text2.innerHTML = "Track selected: "+Math.floor(intersects[ 0 ].faceIndex / 2);
-                    selected = Math.floor(intersects[ 0 ].faceIndex / 2);
+                    var fi = Math.floor(intersects[ 0 ].faceIndex / 2) * 2;
+                    for (var i=0; i< objs.length; i++) {
+                        if (objs[i].faceIndex == fi) {
+                            selected = i;
+                            break;
+                        }                            
+                    }
+                    console.log(intersects[ 0 ]);
+                    console.log(selected);
 
                     new TWEEN.Tween(camera.position).to({
-                        x: intersects[ 0 ].point.x,
-                        y: intersects[ 0 ].point.y,
-                        z: intersects[ 0 ].point.z + 10.0}
+                        x: objs[selected].pos.x,
+                        y: objs[selected].pos.y,
+                        z: objs[selected].pos.z + 15.0}
                     , 500).easing(TWEEN.Easing.Cubic.InOut).start();
-
-
                     update_text();
-                    console.log(intersects[ 0 ]);
                 } else {
                     selected = -1;
                     update_text();
