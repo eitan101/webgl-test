@@ -3,13 +3,16 @@
                 var c = document.createElement('canvas');
                 c.width = c.height = fontSize * lettersPerSide;
                 var ctx = c.getContext('2d');
-                ctx.font = fontSize + 'px Monospace';
+                ctx.font = 'bold '+fontSize + 'px Arial';
+                ctx.fillStyle = '#C1D9D1';
+                ctx.strokeStyle = '#135C44';
                 var i = 0;
 
                 for (var y = 0; y < lettersPerSide; y++) {
                     for (var x = 0; x < lettersPerSide; x++, i++) {
                         var ch = String.fromCharCode(i);
                         ctx.fillText(ch, x * fontSize, -(8 / 32) * fontSize + (y + 1) * fontSize);
+                        ctx.strokeText(ch, x * fontSize, -(8 / 32) * fontSize + (y + 1) * fontSize);
                     }
                 }
                 var tex = new THREE.Texture(c);
@@ -26,7 +29,7 @@
                     var code = str.charCodeAt(i);
                     var cx = code % lettersPerSide;
                     var cy = Math.floor((256 - code) / lettersPerSide);
-                    var p = 4 / 16;
+                    var p = 12 / 16;
                     var dx = 0.9;
                     var dy = 1.0;
                     geo.vertices.push(
