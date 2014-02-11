@@ -15,20 +15,18 @@
     </head>
     <!-- Shaders -->
     <script type="x-shader/x-vertex" id="vertexshader">		
-            uniform float amplitude;
-            attribute vec2 vel;
-            varying mat2 RotationMatrix;
-		
-            void main() {
-                    float PI = 3.14159265358979323846264;
-                    vec3 newPosition = position+amplitude*vec3(vel,0);
-                    vec4 mvPosition = modelViewMatrix * vec4( newPosition, 1.0 );
-                    gl_PointSize = 4.0 * ( 300.0 / length( mvPosition.xyz ) );
-                    gl_Position = projectionMatrix * mvPosition;
-                    float Angle = atan(vel.y,vel.x)+PI/2.0;
-                    RotationMatrix = mat2( cos( Angle ), -sin( Angle ), sin( Angle ),  cos( Angle ));
-
-            }
+        uniform float amplitude;
+        attribute vec2 vel;
+        varying mat2 RotationMatrix;
+        void main() {
+            float PI = 3.14159265358979323846264;
+            vec3 newPosition = position+amplitude*vec3(vel,0);
+            vec4 mvPosition = modelViewMatrix * vec4( newPosition, 1.0 );
+            gl_PointSize = 4.0 * ( 300.0 / length( mvPosition.xyz ) );
+            gl_Position = projectionMatrix * mvPosition;
+            float Angle = atan(vel.y,vel.x)+PI/2.0;
+            RotationMatrix = mat2( cos( Angle ), -sin( Angle ), sin( Angle ),  cos( Angle ));
+        }
     </script>
 
     <script type="x-shader/x-fragment" id="fragmentshader">
@@ -76,7 +74,7 @@ var uniforms = {
     amplitude: {type: 'f', value: 0},
     texture1: {type: "t", value: THREE.ImageUtils.loadTexture('textures/spaceship.png')}
 };
-var num = 400000;
+var num = 200000;
 var text2;
 var selected = -1;
 var projection = d3.geo.equirectangular()
