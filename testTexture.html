@@ -16,29 +16,32 @@
     <!-- Shaders -->
     <script type="x-shader/x-vertex" id="vertexshader">		
             uniform float amplitude;
-            attribute float vx;
-            attribute float vy;
-//		varying vec3 vNormal;
-//		varying vec2 vUv;
+            attribute vec2 vel;
+            varying mat2 RotationMatrix;
 		
             void main() {
-//			vNormal = normal;
-//			vUv = uv;
-			
-                    vec3 newPosition = position+vec3(vx*amplitude,vy*amplitude,0);
+                    float PI = 3.14159265358979323846264;
+                    vec3 newPosition = position+amplitude*vec3(vel,0);
                     vec4 mvPosition = modelViewMatrix * vec4( newPosition, 1.0 );
                     gl_PointSize = 4.0 * ( 300.0 / length( mvPosition.xyz ) );
                     gl_Position = projectionMatrix * mvPosition;
+                    float Angle = atan(vel.y,vel.x)+PI/2.0;
+                    RotationMatrix = mat2( cos( Angle ), -sin( Angle ), sin( Angle ),  cos( Angle ));
+
             }
     </script>
 
     <script type="x-shader/x-fragment" id="fragmentshader">
-        //		varying vec3 vNormal;
         uniform sampler2D texture1;
-        //		varying vec2 vUv;
+        varying mat2 RotationMatrix;
 
         void main() {
-        gl_FragColor = texture2D( texture1, gl_PointCoord );
+//            if (length(gl_PointCoord)>1.05)
+//                discard;
+            vec2 v = (gl_PointCoord-vec2(0.5,0.5))*RotationMatrix+vec2(0.5,0.5);
+            if (v.x<0.0 || v.x>1.0 || v.y<0.0 || v.y>1.0)
+                discard;
+            gl_FragColor = texture2D( texture1, v );
         }	
     </script>
     <body>
@@ -68,8 +71,7 @@ var camera, controls, scene, renderer;
 var cross;
 var shipsGeo;
 var attributes = {
-    vx: {type: 'f', value: []},
-    vy: {type: 'f', value: []},
+    vel: {type: 'v2', value: []},
 };
 var shipMesh;
 var uniforms = {
@@ -97,7 +99,7 @@ function init() {
     controls = new THREE.TrackballControls(camera);
     controls.rotateSpeed = 1.0;
     controls.zoomSpeed = 1.2;
-    controls.panSpeed = 0.8;
+    controls.panSpeed = 1.8;
     controls.noZoom = false;
     controls.noPan = false;
     controls.noRotate = true;
@@ -132,7 +134,6 @@ function init() {
     var maxheight = 20.0;
     var size = 5;
     for (var i = 0; i < num; i++) {
-
         objs[i] = new Object();
         objs[i].vx = (Math.random() - 0.5) * size;
         objs[i].vy = (Math.random() - 0.5) * size;
@@ -144,8 +145,7 @@ function init() {
         objs[i].id = i;
         shipsGeo.vertices.push(new THREE.Vector3(objs[i].x, objs[i].y, objs[i].z));
         shipsGeo.verticesNeedUpdate = true;
-        attributes.vx.value.push(objs[i].vx);
-        attributes.vy.value.push(objs[i].vy);
+        attributes.vel.value.push(new THREE.Vector2(objs[i].vx, objs[i].vy));
     }
     shipMesh = new THREE.ParticleSystem(shipsGeo, shaderMaterial);
     scene.add(shipMesh);
