@@ -48,7 +48,7 @@
         attribute float phi;
 
         void main() {
-            light = mod(time+phi, 1.0);
+            light = max(mod(time+phi, 1.0)-0.8,0.0)*5.0;
             vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
             gl_PointSize = 1.0 * ( 300.0 / length( mvPosition.xyz ) );            
             gl_Position = projectionMatrix * mvPosition;            
@@ -116,7 +116,7 @@ var uniforms = {
 var puniforms = {
     time: {type: 'f', value: 0},
 };
-var num = 5000;
+var num = 15000;
 var text2;
 var selected = -1;
 var projection = d3.geo.equirectangular()
@@ -168,7 +168,7 @@ function init() {
         var vel = objs[i].vel.length();
         for (var j = 0; j < 20; j++) {
             plotsGeo.vertices.push(new THREE.Vector3(3*vel*(Math.cos(j/20*1.57)-1), 3*vel*Math.sin(j/20*1.57)+size2, 0.4/num).applyMatrix4(rotate).add(objs[i].pos));
-            pattributes.phi.value.push(j/20);
+            pattributes.phi.value.push(j/60);
         }
         shipsGeo.vertices.push(
                 new THREE.Vector3(-size2, -size2, 0).applyMatrix4(rotate).add(objs[i].pos),
@@ -198,8 +198,8 @@ function init() {
         }
     }
     shipMesh = new THREE.Mesh(shipsGeo, shipMaterial);
-    scene.add(new THREE.ParticleSystem(plotsGeo, plotMaterial));//new THREE.ParticleSystemMaterial( { size: 1, vertexColors: true } )));
     scene.add(shipMesh);
+    scene.add(new THREE.ParticleSystem(plotsGeo, plotMaterial));//new THREE.ParticleSystemMaterial( { size: 1, vertexColors: true } )));
     
     lastTime = new Date().getTime();
     renderer = new THREE.WebGLRenderer({antialias: false});
