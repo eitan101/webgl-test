@@ -17,14 +17,18 @@
     <script type="x-shader/x-vertex" id="vertexshader">		
         uniform float amplitude;
         attribute vec2 vel;
+//        attribute float ts;
+//        uniform float time;
+
         varying mat2 RotationMatrix;
         void main() {
             float PI = 3.14159265358979323846264;
+            // vec3 newPosition = position+amplitude*vec3(vel,0);
             vec3 newPosition = position+amplitude*vec3(vel,0);
             vec4 mvPosition = modelViewMatrix * vec4( newPosition, 1.0 );
             gl_PointSize = 4.0 * ( 300.0 / length( mvPosition.xyz ) );
             gl_Position = projectionMatrix * mvPosition;
-            float Angle = atan(vel.y,vel.x)+PI/2.0;
+            float Angle = atan(vel.y,vel.x)-PI/2.0;
             RotationMatrix = mat2( cos( Angle ), -sin( Angle ), sin( Angle ),  cos( Angle ));
         }
     </script>
@@ -68,10 +72,12 @@ var cross;
 var shipsGeo;
 var attributes = {
     vel: {type: 'v2', value: []},
+//    ts: {type: 'f', value: []}
 };
 var shipMesh;
 var uniforms = {
     amplitude: {type: 'f', value: 0},
+//    time: {type: 'f', value: []},
     texture1: {type: "t", value: THREE.ImageUtils.loadTexture('textures/spaceship.png')}
 };
 var num = 200000;
@@ -87,8 +93,6 @@ animate();
 
 function init() {
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
-//				camera = new THREE.OrthographicCamera();
-//31.768379, 35.213722
     var carpos = projection([35.213722, 31.768379]);
     camera.position.z = 200.0;
 
@@ -128,21 +132,15 @@ function init() {
     shipsGeo.dynamic = true;
 
     var maxheight = 20.0;
-    var size = 5;
     for (var i = 0; i < num; i++) {
         objs[i] = new Object();
-        objs[i].vx = (Math.random() - 0.5) * size;
-        objs[i].vy = (Math.random() - 0.5) * size;
-        var cart = projection([(Math.random() - 0.5) * 360, -(Math.random() - 0.5) * 180]);
-        objs[i].x = cart[0];
-        objs[i].y = cart[1];
         objs[i].z = i * maxheight / num;
-        objs[i].a = Math.atan2(objs[i].vy, objs[i].vx) + Math.PI / 2;
-        objs[i].id = i;
-        shipsGeo.vertices.push(new THREE.Vector3(objs[i].x, objs[i].y, objs[i].z));
-        shipsGeo.verticesNeedUpdate = true;
-        attributes.vel.value.push(new THREE.Vector2(objs[i].vx, objs[i].vy));
+        shipsGeo.vertices.push(new THREE.Vector3());
+        attributes.vel.value.push(new THREE.Vector2(20,20));
+//        attributes.ts.value.push(0);
     }
+
+//    updateAllShips();
     shipMesh = new THREE.ParticleSystem(shipsGeo, shaderMaterial);
     scene.add(shipMesh);
     lastTime = new Date().getTime();
@@ -171,6 +169,32 @@ function init() {
     text2.style.top = 10 + 'px';
     text2.style.left = 10 + 'px';
     document.body.appendChild(text2);
+}
+
+function updateAllShips(ct) {
+    var size = 5;    
+    for (var i = 0; i < num; i++) {
+        objs[i].vx = (Math.random() - 0.5) * size;
+        objs[i].vy = (Math.random() - 0.5) * size;
+        var cart = projection([(Math.random() - 0.5) * 360, -(Math.random() - 0.5) * 180]);
+        objs[i].x = cart[0];
+        objs[i].y = cart[1];
+        objs[i].id = i;
+        objs[i].ts = ct;
+        updateShip(objs[i],shipsGeo,attributes);
+    }
+    shipsGeo.verticesNeedUpdate = true;    
+    attributes.vel.needsUpdate = true;
+}
+
+function updateShip(ship,shipsGeo,attributes) {
+    var vertex = shipsGeo.vertices[ship.id]
+    vertex.x = ship.x;
+    vertex.y = ship.y;
+    vertex.z = ship.z;
+    var attrib = attributes.vel.value[ship.id];
+    attrib.x = ship.vx;
+    attrib.y = ship.vy;
 }
 
 function onWindowResize() {
@@ -216,25 +240,36 @@ function onMouseMove(event) {
     } else {
         selected = -1;
         update_text();
-        //text2.innerHTML = "Track selected: none";
     }
 }
 
 function update_text() {
     if (selected >= 0) {
         text2.innerHTML = "Track selected: " + selected + "<br/>" +
-//					"pos: "+objs[selected].x + ","+objs[selected].y + "<br/>"+
                 "geo: " + projection.invert([objs[selected].x, -objs[selected].y]);
     } else
         text2.innerHTML = "Track selected: none<br/><br/>";
 }
+
+var lastUpdate = 0;
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
 
+
     var ct = new Date().getTime();
+    var dt = (ct - lastUpdate) / 1000.0;
+    if (dt>1.5) {
+        lastUpdate = ct;
+
+        updateAllShips(ct);
+    }
+
     var dt = (ct - lastTime) / 1000.0;
-    uniforms.amplitude.value = 1.0 * Math.sin(dt * 3.14);
+//    uniforms.time.value = ct;
+    uniforms.amplitude.value = (ct-lastUpdate)*0.001;
+//    console.log((uniforms.time.value-uniforms.amplitude.value)*0.001);
+//    uniforms.amplitude.value = 1.0 * Math.sin(dt * 3.14);
     render();
 }
 
