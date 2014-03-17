@@ -15,16 +15,14 @@
     </head>
     <!-- Shaders -->
     <script type="x-shader/x-vertex" id="vertexshader">		
-        uniform float amplitude;
         attribute vec2 vel;
-//        attribute float ts;
-//        uniform float time;
+        attribute float ts;
+        uniform float time;
 
         varying mat2 RotationMatrix;
         void main() {
             float PI = 3.14159265358979323846264;
-            // vec3 newPosition = position+amplitude*vec3(vel,0);
-            vec3 newPosition = position+amplitude*vec3(vel,0);
+            vec3 newPosition = position+(time-ts)*0.001*vec3(vel,0);
             vec4 mvPosition = modelViewMatrix * vec4( newPosition, 1.0 );
             gl_PointSize = 4.0 * ( 300.0 / length( mvPosition.xyz ) );
             gl_Position = projectionMatrix * mvPosition;
@@ -72,15 +70,15 @@ var cross;
 var shipsGeo;
 var attributes = {
     vel: {type: 'v2', value: []},
-//    ts: {type: 'f', value: []}
+//    acc: {type: 'v2', value: []},
+    ts: {type: 'f', value: []}
 };
 var shipMesh;
 var uniforms = {
-    amplitude: {type: 'f', value: 0},
-//    time: {type: 'f', value: []},
+    time: {type: 'f', value: []},
     texture1: {type: "t", value: THREE.ImageUtils.loadTexture('textures/spaceship.png')}
 };
-var num = 200000;
+var num = 50000;
 var text2;
 var selected = -1;
 var projection = d3.geo.equirectangular()
@@ -136,11 +134,10 @@ function init() {
         objs[i] = new Object();
         objs[i].z = i * maxheight / num;
         shipsGeo.vertices.push(new THREE.Vector3());
-        attributes.vel.value.push(new THREE.Vector2(20,20));
-//        attributes.ts.value.push(0);
+        attributes.vel.value.push(new THREE.Vector2());
+        attributes.ts.value.push(0);
     }
 
-//    updateAllShips();
     shipMesh = new THREE.ParticleSystem(shipsGeo, shaderMaterial);
     scene.add(shipMesh);
     lastTime = new Date().getTime();
@@ -171,7 +168,7 @@ function init() {
     document.body.appendChild(text2);
 }
 
-function updateAllShips(ct) {
+function randomAllShips(ct) {
     var size = 5;    
     for (var i = 0; i < num; i++) {
         objs[i].vx = (Math.random() - 0.5) * size;
@@ -185,6 +182,20 @@ function updateAllShips(ct) {
     }
     shipsGeo.verticesNeedUpdate = true;    
     attributes.vel.needsUpdate = true;
+    attributes.ts.needsUpdate = true;
+}
+
+function updateAllShips(ct) {
+    for (var i = 0; i < num; i++) {
+        var dt = ct - objs[i].ts;
+        objs[i].x += objs[i].vx * dt * 0.0001;
+        objs[i].y += objs[i].vy * dt * 0.0001;
+        objs[i].ts = ct;
+        updateShip(objs[i],shipsGeo,attributes);
+    }
+    shipsGeo.verticesNeedUpdate = true;    
+    attributes.vel.needsUpdate = true;
+    attributes.ts.needsUpdate = true;
 }
 
 function updateShip(ship,shipsGeo,attributes) {
@@ -195,6 +206,7 @@ function updateShip(ship,shipsGeo,attributes) {
     var attrib = attributes.vel.value[ship.id];
     attrib.x = ship.vx;
     attrib.y = ship.vy;
+    attributes.ts.value[ship.id] = 0;
 }
 
 function onWindowResize() {
@@ -252,24 +264,21 @@ function update_text() {
 }
 
 var lastUpdate = 0;
+//uniforms.time.value = 0;
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
 
-
     var ct = new Date().getTime();
+    uniforms.time.value = ct % 60000;
     var dt = (ct - lastUpdate) / 1000.0;
     if (dt>1.5) {
+        if (lastUpdate==0)
+            randomAllShips(uniforms.time.value);
+        else
+            updateAllShips(uniforms.time.value);
         lastUpdate = ct;
-
-        updateAllShips(ct);
     }
-
-    var dt = (ct - lastTime) / 1000.0;
-//    uniforms.time.value = ct;
-    uniforms.amplitude.value = (ct-lastUpdate)*0.001;
-//    console.log((uniforms.time.value-uniforms.amplitude.value)*0.001);
-//    uniforms.amplitude.value = 1.0 * Math.sin(dt * 3.14);
     render();
 }
 
