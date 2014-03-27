@@ -17,12 +17,12 @@
     <script type="x-shader/x-vertex" id="vertexshader">		
         attribute vec2 vel;
         attribute float ts;
-        uniform float time;
+        uniform float clk;
 
         varying mat2 RotationMatrix;
         void main() {
             float PI = 3.14159265358979323846264;
-            vec3 newPosition = position+(time-ts)*0.001*vec3(vel,0);
+            vec3 newPosition = position+(clk-ts)*vec3(vel,0);
             vec4 mvPosition = modelViewMatrix * vec4( newPosition, 1.0 );
             gl_PointSize = 4.0 * ( 300.0 / length( mvPosition.xyz ) );
             gl_Position = projectionMatrix * mvPosition;
@@ -64,7 +64,7 @@ var container, stats;
 var width = 1000;
 var height = width / 2;
 var objs = new Array();
-var lastTime;
+var lastclk;
 var camera, controls, scene, renderer;
 var cross;
 var shipsGeo;
@@ -75,10 +75,10 @@ var attributes = {
 };
 var shipMesh;
 var uniforms = {
-    time: {type: 'f', value: []},
+    clk: {type: 'f', value: []},
     texture1: {type: "t", value: THREE.ImageUtils.loadTexture('textures/spaceship.png')}
 };
-var num = 50000;
+var num = 200000;
 var text2;
 var selected = -1;
 var projection = d3.geo.equirectangular()
@@ -87,7 +87,7 @@ var projection = d3.geo.equirectangular()
         .precision(.1);
 
 init();
-animate();
+//animate();
 
 function init() {
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
@@ -140,7 +140,7 @@ function init() {
 
     shipMesh = new THREE.ParticleSystem(shipsGeo, shaderMaterial);
     scene.add(shipMesh);
-    lastTime = new Date().getTime();
+    lastclk = new Date().getTime();
     renderer = new THREE.WebGLRenderer({antialias: false});
     renderer.setSize(window.innerWidth, window.innerHeight);
     container = document.getElementById('container');
@@ -169,7 +169,7 @@ function init() {
 }
 
 function randomAllShips(ct) {
-    var size = 5;    
+    var size = 1;    
     for (var i = 0; i < num; i++) {
         objs[i].vx = (Math.random() - 0.5) * size;
         objs[i].vy = (Math.random() - 0.5) * size;
@@ -188,13 +188,13 @@ function randomAllShips(ct) {
 function updateAllShips(ct) {
     for (var i = 0; i < num; i++) {
         var dt = ct - objs[i].ts;
-        objs[i].x += objs[i].vx * dt * 0.0001;
-        objs[i].y += objs[i].vy * dt * 0.0001;
+        objs[i].x += objs[i].vx * dt;
+        objs[i].y += objs[i].vy * dt;
         objs[i].ts = ct;
         updateShip(objs[i],shipsGeo,attributes);
     }
     shipsGeo.verticesNeedUpdate = true;    
-    attributes.vel.needsUpdate = true;
+    //attributes.vel.needsUpdate = true;
     attributes.ts.needsUpdate = true;
 }
 
@@ -206,7 +206,7 @@ function updateShip(ship,shipsGeo,attributes) {
     var attrib = attributes.vel.value[ship.id];
     attrib.x = ship.vx;
     attrib.y = ship.vy;
-    attributes.ts.value[ship.id] = 0;
+    attributes.ts.value[ship.id] = ship.ts;
 }
 
 function onWindowResize() {
@@ -264,23 +264,36 @@ function update_text() {
 }
 
 var lastUpdate = 0;
-//uniforms.time.value = 0;
-function animate() {
-    requestAnimationFrame(animate);
+uniforms.clk.value = 0;
+var lastTimeMsec= null
+requestAnimationFrame(function animate(nowMsec){
+    // keep looping
+    requestAnimationFrame( animate );
+    // measure time
+    lastTimeMsec    = lastTimeMsec || nowMsec-1000/60
+    var deltaMsec   = Math.min(200, nowMsec - lastTimeMsec)
+    lastTimeMsec    = nowMsec
+    // call each update function
     controls.update();
 
-    var ct = new Date().getTime();
-    uniforms.time.value = ct % 60000;
-    var dt = (ct - lastUpdate) / 1000.0;
-    if (dt>1.5) {
+//    var ct = new Date().getTime();
+    uniforms.clk.value += deltaMsec*0.001;
+    var dt = (nowMsec - lastUpdate) / 1000.0;
+    if (dt>0.5) {
         if (lastUpdate==0)
-            randomAllShips(uniforms.time.value);
+            randomAllShips(uniforms.clk.value);
         else
-            updateAllShips(uniforms.time.value);
-        lastUpdate = ct;
+            updateAllShips(uniforms.clk.value);
+        lastUpdate = nowMsec;
     }
     render();
-}
+})
+ 
+// randomAllShips(uniforms.clk.value);
+ 
+// setInterval(function(){
+//     alert("Hello")
+// },3000);
 
 function render() {
     TWEEN.update();
